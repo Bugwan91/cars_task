@@ -18,7 +18,9 @@ class Car extends Model
 
     public function photos()
     {
-        return $this->hasMany(CarPhoto::class);
+        return $this->hasMany(CarPhoto::class)
+            ->orderByDesc('is_primary')
+            ->orderBy('id');
     }
 
     public function options()

@@ -1,6 +1,6 @@
 <script setup>
 import { Head, useForm, Link } from '@inertiajs/vue3';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
@@ -20,10 +20,23 @@ const form = useForm({
     price: '',
     description: '',
     options: [],
+    photos: [],
+    primary_photo_index: null,
 });
 
 const optionInput = ref('');
 const selectedOptions = ref([]);
+const photoInput = ref(null);
+const photoPreviews = ref([]);
+const primaryPhotoIndex = ref(null);
+const photoError = computed(() => {
+    if (form.errors.photos) {
+        return form.errors.photos;
+    }
+
+    const specificKey = Object.keys(form.errors).find((key) => key.startsWith('photos.'));
+    return specificKey ? form.errors[specificKey] : '';
+});
 
 const addOption = (value) => {
     const normalized = value.trim();
@@ -92,11 +105,87 @@ const resetOptions = () => {
     optionInput.value = '';
 };
 
+const cleanupPhotoPreviews = () => {
+    photoPreviews.value.forEach((preview) => {
+        URL.revokeObjectURL(preview.url);
+    });
+    photoPreviews.value = [];
+};
+
+const setPrimaryPhoto = (index) => {
+    if (!photoPreviews.value.length) {
+        return;
+    }
+    primaryPhotoIndex.value = index;
+};
+
+watch(primaryPhotoIndex, (value) => {
+    form.primary_photo_index = value;
+});
+
+const handlePhotoChange = (event) => {
+    const files = Array.from(event.target.files || []);
+    cleanupPhotoPreviews();
+
+    form.photos = files;
+    photoPreviews.value = files.map((file, index) => ({
+        id: `${file.name}-${file.lastModified}-${index}`,
+        url: URL.createObjectURL(file),
+        name: file.name,
+        size: file.size,
+    }));
+
+    if (files.length) {
+        primaryPhotoIndex.value = 0;
+    } else {
+        primaryPhotoIndex.value = null;
+    }
+
+    if (event.target) {
+        event.target.value = '';
+    }
+};
+
+const removePhoto = (index) => {
+    const updatedFiles = Array.from(form.photos || []);
+    updatedFiles.splice(index, 1);
+    form.photos = updatedFiles;
+
+    const removed = photoPreviews.value.splice(index, 1)[0];
+    if (removed) {
+        URL.revokeObjectURL(removed.url);
+    }
+
+    if (!updatedFiles.length) {
+        primaryPhotoIndex.value = null;
+    } else if (primaryPhotoIndex.value === index) {
+        primaryPhotoIndex.value = 0;
+    } else if ((primaryPhotoIndex.value || 0) > index) {
+        primaryPhotoIndex.value = Math.max((primaryPhotoIndex.value || 0) - 1, 0);
+    }
+};
+
+const resetPhotos = () => {
+    cleanupPhotoPreviews();
+    form.photos = [];
+    primaryPhotoIndex.value = null;
+
+    if (photoInput.value) {
+        photoInput.value.value = '';
+    }
+};
+
+onBeforeUnmount(() => {
+    cleanupPhotoPreviews();
+});
+
 const submit = () => {
     form.post(route('cars.store.web'), {
+        forceFormData: true,
         onSuccess: () => {
             form.reset();
             resetOptions();
+            resetPhotos();
         },
     });
 };
@@ -226,6 +315,54 @@ const submit = () => {
                                 </button>
                             </div>
                             <InputError class="mt-2" :message="form.errors.options" />
+                        </div>
+
+                        <div>
+                            <InputLabel for="photos" value="Photos" />
+                            <input
+                                id="photos"
+                                ref="photoInput"
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                class="mt-1 block w-full text-sm text-gray-900 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 dark:text-gray-200 dark:file:bg-gray-700 dark:file:text-gray-200"
+                                @change="handlePhotoChange"
+                            />
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                Upload up to 10 images. Choose one as the main photo for the listing.
+                            </p>
+                            <InputError class="mt-2" :message="photoError" />
+                            <InputError class="mt-1" :message="form.errors.primary_photo_index" />
+
+                            <div v-if="photoPreviews.length" class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                                <div
+                                    v-for="(preview, index) in photoPreviews"
+                                    :key="preview.id"
+                                    class="rounded-md border border-gray-200 p-2 dark:border-gray-700"
+                                >
+                                    <img :src="preview.url" :alt="preview.name" class="h-24 w-full rounded object-cover" />
+                                    <p class="mt-2 truncate text-xs text-gray-500 dark:text-gray-400">
+                                        {{ preview.name }}
+                                    </p>
+                                    <div class="mt-2 flex items-center justify-between text-xs">
+                                        <button
+                                            type="button"
+                                            class="rounded-full px-2 py-1"
+                                            :class="primaryPhotoIndex === index ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'"
+                                            @click="setPrimaryPhoto(index)"
+                                        >
+                                            {{ primaryPhotoIndex === index ? 'Main photo' : 'Set as main' }}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="text-red-500 hover:text-red-600"
+                                            @click="removePhoto(index)"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="flex items-center gap-4">

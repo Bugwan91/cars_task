@@ -30,6 +30,9 @@ class CarRequest extends FormRequest
             'description' => 'nullable|string|max:1000',
             'options' => 'nullable|array',
             'options.*' => 'string|max:50',
+            'photos' => 'nullable|array|max:10',
+            'photos.*' => 'image|max:5120',
+            'primary_photo_index' => 'nullable|integer|min:0',
         ];
     }
 }

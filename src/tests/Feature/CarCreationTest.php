@@ -1,0 +1,58 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Car;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Tests\TestCase;
+
+class CarCreationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    /** @test */
+    public function it_creates_a_car_with_basic_data(): void
+    {
+        $response = $this->post(route('cars.store.web'), [
+            'brand' => 'Test',
+            'model' => 'Model',
+            'year' => 2024,
+            'price' => 1000,
+            'description' => 'desc',
+            'options' => ['MP3'],
+        ]);
+
+        $response->assertRedirect(route('home'));
+        $this->assertDatabaseHas('cars', ['brand' => 'Test', 'model' => 'Model']);
+    }
+
+    /** @test */
+    public function it_creates_car_with_photos_and_sets_primary(): void
+    {
+        Storage::fake('public');
+
+        $response = $this->post(route('cars.store.web'), [
+            'brand' => 'Photo',
+            'model' => 'Car',
+            'year' => 2024,
+            'price' => 12345,
+            'description' => 'with photos',
+            'photos' => [
+                UploadedFile::fake()->create('first.jpg', 50, 'image/jpeg'),
+                UploadedFile::fake()->create('second.jpg', 75, 'image/jpeg'),
+            ],
+            'primary_photo_index' => 1,
+        ]);
+
+        $response->assertRedirect(route('home'));
+
+        $car = Car::where('brand', 'Photo')->where('model', 'Car')->first();
+        $this->assertNotNull($car);
+        $this->assertCount(2, $car->photos);
+        $this->assertTrue($car->photos->first()->is_primary);
+
+        Storage::disk('public')->assertExists($car->photos->first()->photo_path);
+    }
+}

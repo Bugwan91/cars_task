@@ -98,19 +98,20 @@ onUnmounted(() => {
                             />
                         </div>
                         <div class="p-6">
-                            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-                                {{ car.brand }} {{ car.model }}
-                            </h2>
+                            <div class="flex items-start justify-between gap-3">
+                                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                    {{ car.brand }} {{ car.model }}
+                                </h2>
+                                <p class="text-lg font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                                    ${{ car.price }}
+                                </p>
+                            </div>
+
                             <p class="mt-2 text-gray-600 dark:text-gray-300">
                                 Year: {{ car.year }}
                             </p>
-                            <p class="mt-1 text-lg font-bold text-indigo-600 dark:text-indigo-400">
-                                ${{ car.price }}
-                            </p>
-                            <p class="mt-4 text-sm text-gray-500 dark:text-gray-400 line-clamp-3">
-                                {{ car.description }}
-                            </p>
-                            <div v-if="car.options && car.options.length" class="mt-4 flex flex-wrap gap-2">
+
+                            <div v-if="car.options && car.options.length" class="mt-3 flex flex-wrap gap-2">
                                 <span
                                     v-for="option in car.options"
                                     :key="`${car.id}-${option.id ?? option.name}`"
@@ -119,6 +120,10 @@ onUnmounted(() => {
                                     {{ option.name }}
                                 </span>
                             </div>
+
+                            <p class="mt-4 text-sm text-gray-500 dark:text-gray-400 line-clamp-3">
+                                {{ car.description }}
+                            </p>
                         </div>
                     </div>
                 </div>

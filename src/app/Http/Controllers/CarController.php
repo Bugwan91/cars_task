@@ -40,7 +40,8 @@ class CarController extends Controller
 
     public function store(CarRequest $request)
     {
-        $car = Car::create($request->validated());
+        $car = Car::create($this->extractCarAttributes($request));
+        $this->storePhotos($car, $request);
         $this->syncOptions($car, $request->input('options', []));
 
         if ($request->wantsJson() && !$request->inertia()) {
@@ -53,7 +54,7 @@ class CarController extends Controller
     public function update(CarRequest $request, $id)
     {
         $car = Car::findOrFail($id);
-        $car->update($request->validated());
+        $car->update($this->extractCarAttributes($request));
         $this->syncOptions($car, $request->input('options', []));
         return response()->json($car->load(['photos', 'options']));
     }
@@ -81,5 +82,44 @@ class CarController extends Controller
         $ids = $normalized->map(fn (string $name) => CarOption::firstOrCreate(['name' => $name])->id);
 
         $car->options()->sync($ids->all());
+    }
+    
+    private function extractCarAttributes(CarRequest $request): array
+    {
+        return $request->safe()->only([
+            'brand',
+            'model',
+            'year',
+            'price',
+            'description',
+        ]);
+    }
+    
+    private function storePhotos(Car $car, CarRequest $request): void
+    {
+        if (!$request->hasFile('photos')) {
+            return;
+        }
+
+        $files = $request->file('photos');
+        $count = count($files);
+
+        if ($count === 0) {
+            return;
+        }
+
+        $primaryIndex = min(
+            max((int) $request->input('primary_photo_index', 0), 0),
+            $count - 1
+        );
+
+        foreach ($files as $index => $file) {
+            $path = $file->store('cars', 'public');
+
+            $car->photos()->create([
+                'photo_path' => $path,
+                'is_primary' => $index === $primaryIndex,
+            ]);
+        }
     }
 }

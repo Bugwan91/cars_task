@@ -12,6 +12,12 @@ fi
 echo "📦 Installing PHP dependencies..."
 composer install --no-interaction --optimize-autoloader
 
+# Ensure public storage symlink exists for uploaded media
+if [ ! -L public/storage ]; then
+    echo "🔗 Creating storage symlink..."
+    php artisan storage:link
+fi
+
 # Ensure the application key exists before we touch the database
 if ! grep -Eq "^APP_KEY=base64:" .env || grep -Eq "^APP_KEY=($|[[:space:]]*$)" .env; then
     echo "🔑 Generating application key..."
