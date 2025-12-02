@@ -5,9 +5,16 @@ export const storageUrl = (path) => {
     return `/storage/${path.replace(/^\/+/, '')}`;
 };
 
-export const photoUrlOrFallback = (photo, fallback) => {
+export const photoUrlOrFallback = (photo, fallback, options = {}) => {
+    const { preferThumbnail = false } = options;
+
+    if (preferThumbnail && photo?.thumbnail_path) {
+        return storageUrl(photo.thumbnail_path);
+    }
+
     if (photo?.photo_path) {
         return storageUrl(photo.photo_path);
     }
+
     return fallback;
 };

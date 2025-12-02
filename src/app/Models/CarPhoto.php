@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CarPhoto extends Model
 {
-    protected $fillable = ['car_id', 'photo_path', 'is_primary'];
+    protected $fillable = ['car_id', 'photo_path', 'thumbnail_path', 'is_primary'];
 
     protected $casts = [
         'is_primary' => 'boolean',

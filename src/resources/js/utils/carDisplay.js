@@ -1,5 +1,5 @@
 import { DEFAULT_DISPLAY_CURRENCY } from '@/constants/currency';
-import { photoUrlOrFallback } from '@/utils/storage';
+import { photoUrlOrFallback, storageUrl } from '@/utils/storage';
 const FORMATTER_LOCALE = 'en-US';
 const formatterCache = new Map();
 
@@ -23,7 +23,8 @@ const getFormatter = (currency = DEFAULT_DISPLAY_CURRENCY) => {
 
 export const getPrimaryPhotoUrl = (car, fallbackImage) => {
     if (car?.photos?.length) {
-        return photoUrlOrFallback(car.photos[0], fallbackImage);
+        const [primaryPhoto] = car.photos;
+        return photoUrlOrFallback(primaryPhoto, fallbackImage, { preferThumbnail: true });
     }
     return fallbackImage;
 };
@@ -46,15 +47,27 @@ export const formatCarPrice = (price, currency = DEFAULT_DISPLAY_CURRENCY) => {
     }
 };
 
-export const normalizeCarForCard = (car, fallbackImage) => ({
-    id: car.id,
-    title: `${car.brand} ${car.model}`.trim(),
-    price: formatCarPrice(
-        car.display_price ?? car.price,
-        car.display_currency ?? DEFAULT_DISPLAY_CURRENCY
-    ),
-    year: car.year ?? '—',
-    options: car.options ?? [],
-    description: car.description ?? '',
-    photoUrl: getPrimaryPhotoUrl(car, fallbackImage),
-});
+export const normalizeCarForCard = (car, fallbackImage) => {
+    const photoUrl = (() => {
+        if (car.primary_thumbnail_path) {
+            return storageUrl(car.primary_thumbnail_path);
+        }
+        if (car.primary_photo_path) {
+            return storageUrl(car.primary_photo_path);
+        }
+        return getPrimaryPhotoUrl(car, fallbackImage);
+    })();
+
+    return {
+        id: car.id,
+        title: `${car.brand} ${car.model}`.trim(),
+        price: formatCarPrice(
+            car.display_price ?? car.price,
+            car.display_currency ?? DEFAULT_DISPLAY_CURRENCY
+        ),
+        year: car.year ?? '—',
+        options: car.options ?? [],
+        description: car.description ?? '',
+        photoUrl,
+    };
+};

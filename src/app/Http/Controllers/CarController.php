@@ -6,13 +6,17 @@ use App\Models\Car;
 use App\Models\CarOption;
 use App\Http\Requests\CarRequest;
 use App\Services\ExchangeRateService;
+use App\Services\ImageVariantService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class CarController extends Controller
 {
-    public function __construct(private ExchangeRateService $exchangeRateService)
+    public function __construct(
+        private ExchangeRateService $exchangeRateService,
+        private ImageVariantService $imageVariantService
+    )
     {
     }
 
@@ -185,8 +189,11 @@ class CarController extends Controller
         foreach ($files as $index => $file) {
             $path = $file->store('cars', 'public');
 
+            $thumbnailPath = $this->imageVariantService->createThumbnail($path);
+
             $car->photos()->create([
                 'photo_path' => $path,
+                'thumbnail_path' => $thumbnailPath,
                 'is_primary' => $index === $primaryIndex,
             ]);
         }
@@ -202,6 +209,9 @@ class CarController extends Controller
 
         foreach ($photos as $photo) {
             Storage::disk('public')->delete($photo->photo_path);
+            if ($photo->thumbnail_path) {
+                Storage::disk('public')->delete($photo->thumbnail_path);
+            }
             $photo->delete();
         }
     }
@@ -250,12 +260,19 @@ class CarController extends Controller
 
     private function formatCarForResponse(Car $car, string $currency, array $rates): Car
     {
+        $primaryPhoto = $car->photos->first();
+
         $baseCurrency = $this->exchangeRateService->getBaseCurrency();
 
         $car->setAttribute('display_currency', $currency);
         $car->setAttribute('original_price', $car->price);
         $car->setAttribute('base_currency', $baseCurrency);
         $car->setAttribute('display_price', $this->exchangeRateService->convert($car->price, $currency, $rates));
+
+        if ($primaryPhoto) {
+            $car->setAttribute('primary_photo_path', $primaryPhoto->photo_path);
+            $car->setAttribute('primary_thumbnail_path', $primaryPhoto->thumbnail_path);
+        }
 
         return $car;
     }

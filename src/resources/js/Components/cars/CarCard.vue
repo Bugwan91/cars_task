@@ -40,6 +40,9 @@ const hasMoreOptions = computed(() => (displayCar.value.options?.length || 0) > 
                     :alt="displayCar.title"
                     class="h-48 w-full object-cover"
                     loading="lazy"
+                    decoding="async"
+                    width="640"
+                    height="360"
                 />
             </div>
             <div class="flex-1 flex flex-col p-6">

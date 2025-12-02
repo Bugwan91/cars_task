@@ -32,8 +32,11 @@ class Car extends Model
     {
         static::deleting(function ($car) {
             foreach ($car->photos as $photo) {
-                if (Storage::exists($photo->photo_path)) {
-                    Storage::delete($photo->photo_path);
+                if ($photo->photo_path && Storage::disk('public')->exists($photo->photo_path)) {
+                    Storage::disk('public')->delete($photo->photo_path);
+                }
+                if ($photo->thumbnail_path && Storage::disk('public')->exists($photo->thumbnail_path)) {
+                    Storage::disk('public')->delete($photo->thumbnail_path);
                 }
             }
         });

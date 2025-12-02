@@ -81,7 +81,7 @@ const combinedPhotos = computed(() => {
         key: `existing-${photo.id}`,
         type: 'existing',
         id: photo.id,
-        url: photoUrlOrFallback(photo, DEFAULT_CAR_IMAGE),
+        url: photoUrlOrFallback(photo, DEFAULT_CAR_IMAGE, { preferThumbnail: true }),
         name: photo.photo_path ?? `Photo-${photo.id}`,
         isPrimary: props.primaryPhotoId === photo.id,
     }));
@@ -139,7 +139,7 @@ defineExpose({ reset, removePhoto, setPrimary });
                 :key="photo.key"
                 class="rounded-md border border-gray-200 p-2 dark:border-gray-700"
             >
-                <img :src="photo.url" :alt="photo.name" class="h-24 w-full rounded object-cover" />
+                <img :src="photo.url" :alt="photo.name" class="h-24 w-full rounded object-cover" loading="lazy" decoding="async" />
                 <div class="mt-2 flex items-center justify-between text-xs">
                     <p class="truncate text-gray-500 dark:text-gray-400">
                         {{ photo.name }}

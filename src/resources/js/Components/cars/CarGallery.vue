@@ -28,7 +28,8 @@ const photoList = computed(() => props.photos ?? []);
 const hasPhotos = computed(() => photoList.value.length > 0);
 const showGalleryControls = computed(() => photoList.value.length > 1);
 
-const photoUrl = (photo) => photoUrlOrFallback(photo, props.fallback);
+const photoUrl = (photo, options = {}) =>
+    photoUrlOrFallback(photo, props.fallback, options);
 
 const resolveInitialIndex = () => {
     if (!hasPhotos.value) {
@@ -112,6 +113,8 @@ const cyclePhoto = (direction) => {
                 :src="activePhotoUrl"
                 :alt="`${props.title} photo ${activePhotoIndex !== null ? activePhotoIndex + 1 : ''}`"
                 class="h-96 w-full rounded-md object-cover"
+                loading="lazy"
+                decoding="async"
             />
             <button
                 v-if="showGalleryControls"
@@ -149,7 +152,13 @@ const cyclePhoto = (direction) => {
                 :class="activePhotoIndex === index ? 'border-indigo-500 ring-2 ring-indigo-500' : 'border-gray-200 dark:border-gray-700'"
                 @click="setActivePhoto(index)"
             >
-                <img :src="photoUrl(photo)" :alt="`Thumbnail ${index + 1}`" class="h-16 w-full rounded object-cover" />
+                <img
+                    :src="photoUrl(photo, { preferThumbnail: true })"
+                    :alt="`Thumbnail ${index + 1}`"
+                    class="h-16 w-full rounded object-cover"
+                    loading="lazy"
+                    decoding="async"
+                />
             </button>
         </div>
     </div>
