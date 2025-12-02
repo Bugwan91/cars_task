@@ -1,18 +1,14 @@
 <?php
 
+use App\Http\Controllers\CarController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+Route::get('/', [CarController::class, 'home'])->name('home');
+Route::get('/cars/create', [CarController::class, 'create'])->name('cars.create');
+Route::post('/cars', [CarController::class, 'store'])->name('cars.store.web');
 
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
