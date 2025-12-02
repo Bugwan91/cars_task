@@ -2,6 +2,7 @@
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted } from 'vue';
 import axios from 'axios';
+import { DEFAULT_CAR_IMAGE } from '@/constants/media';
 
 const props = defineProps({
     cars: {
@@ -15,6 +16,7 @@ const nextPageUrl = ref(props.cars.next_page_url);
 const loading = ref(false);
 const observer = ref(null);
 const loadMoreTrigger = ref(null);
+const defaultCarImage = DEFAULT_CAR_IMAGE;
 
 const loadMoreCars = async () => {
     if (loading.value || !nextPageUrl.value) return;
@@ -88,15 +90,12 @@ onUnmounted(() => {
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                     <div v-for="car in allCars" :key="car.id" class="overflow-hidden rounded-lg bg-white shadow dark:bg-gray-800">
                         <div class="aspect-w-16 aspect-h-9 bg-gray-200 dark:bg-gray-700">
-                            <img 
-                                v-if="car.photos && car.photos.length > 0" 
-                                :src="'/storage/' + car.photos[0].photo_path" 
+                            <img
+                                :src="car.photos && car.photos.length ? `/storage/${car.photos[0].photo_path}` : defaultCarImage"
                                 :alt="car.brand + ' ' + car.model"
                                 class="h-48 w-full object-cover"
+                                loading="lazy"
                             />
-                            <div v-else class="flex h-48 items-center justify-center text-gray-400">
-                                No Image
-                            </div>
                         </div>
                         <div class="p-6">
                             <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
