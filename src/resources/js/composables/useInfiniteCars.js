@@ -19,7 +19,7 @@ export default function useInfiniteCars(initialCars = [], initialNextPageUrl = n
         try {
             const response = await axios.get(nextPageUrl.value);
             cars.value = [...cars.value, ...response.data.data];
-            nextPageUrl.value = response.data.next_page_url;
+            nextPageUrl.value = response.data.links?.next ?? response.data.next_page_url;
         } catch (error) {
             console.error('Error loading more cars:', error);
         } finally {

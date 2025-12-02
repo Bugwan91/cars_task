@@ -6,6 +6,8 @@ use App\Models\ExchangeRate;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
+// TODO: Ideally, this should runs as a scheduled job to keep rates updated.
+// But for now, it is fine to slow some random user once in a while.
 class ExchangeRateService
 {
     public const SUPPORTED_CURRENCIES = ['UAH', 'USD', 'EUR'];

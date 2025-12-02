@@ -16,6 +16,8 @@ class Car extends Model
         'description',
     ];
 
+    public const PER_PAGE = 9;
+
     public function photos()
     {
         return $this->hasMany(CarPhoto::class)

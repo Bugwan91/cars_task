@@ -25,7 +25,7 @@ const {
     loading,
     loadMoreTrigger,
     reset: resetCars,
-} = useInfiniteCars(props.cars.data, props.cars.next_page_url);
+} = useInfiniteCars(props.cars.data, props.cars.links?.next ?? props.cars.next_page_url);
 
 watch(
     () => props.cars,
@@ -33,7 +33,7 @@ watch(
         if (!updated) {
             return;
         }
-        resetCars(updated.data ?? [], updated.next_page_url ?? null);
+        resetCars(updated.data ?? [], updated.links?.next ?? updated.next_page_url ?? null);
     }
 );
 </script>

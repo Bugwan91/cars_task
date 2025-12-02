@@ -58,7 +58,8 @@ fi
 
 # 5. Fix permissions
 echo "🔒 Fixing permissions..."
-chmod -R 777 storage bootstrap/cache 2>/dev/null || true
+chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
 # 6. Execute the main command (php-fpm)
 echo "🚀 Starting PHP-FPM..."
