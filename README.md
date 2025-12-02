@@ -9,43 +9,35 @@ This project is a minimal, production-ready setup for a Laravel application with
 
 ### Installation
 
-1. **Clone the repository** (if applicable).
+Everything boots with a single command:
 
-2. **Setup Environment Variables:**
-   ```bash
-   cd src
-   cp .env.example .env
-   cd ..
-   ```
+```bash
+docker-compose up
+```
 
-3. **Start the Application:**
-   ```bash
-   docker-compose up -d --build
-   ```
-   *Note: The database service has a healthcheck. The app container will wait for the database to be ready before starting.*
+The PHP container's entrypoint handles first-time and subsequent setup automatically:
+- copies `.env.example` to `.env` (only once) and generates `APP_KEY` when missing
+- runs `composer install` and `npm install` (only if `node_modules` is absent or you set `FORCE_NPM_INSTALL=1`)
+- builds the production frontend bundle (`npm run build`)
+- runs database migrations every start and seeds once on the very first boot
+- fixes `storage` and `bootstrap/cache` permissions so the app can write logs/uploads
 
-4. **Install Dependencies & Initialize:**
-   Run the following commands to install PHP/Node dependencies and set up the database:
-   ```bash
-   # Install PHP dependencies
-   docker-compose exec app composer install
+Need to rerun any of those steps? Either restart the `app` service (`docker-compose up -d --build app`) or run the individual commands via `docker-compose exec app ...`.
 
-   # Install Node dependencies
-   docker-compose exec app npm install --legacy-peer-deps
+### Access the App
+- **Web App:** [http://localhost:8000](http://localhost:8000)
+- **Database:** Port `3306`
+  - User: `laravel`
+  - Password: `root`
+  - Database: `laravel`
 
-   # Build frontend assets
-   docker-compose exec app npm run build
+### Automation Controls
+You can tweak the bootstrap behavior by setting environment variables on the `app` service in `docker-compose.yml`:
 
-   # Run database migrations
-   docker-compose exec app php artisan migrate
-   ```
-
-5. **Access the App:**
-   - **Web App:** [http://localhost:8000](http://localhost:8000)
-   - **Database:** Port `3306`
-     - User: `laravel`
-     - Password: `root`
-     - Database: `laravel`
+- `FORCE_NPM_INSTALL=1` — reinstall Node dependencies even if `node_modules/` exists
+- `SKIP_NPM_BUILD=1` — skip the production asset build during container startup
+- `SKIP_MIGRATIONS=1` — prevent automatic `php artisan migrate --force`
+- `FORCE_DB_SEED=1` — run `php artisan db:seed --force` on every boot (seeding already runs automatically on the very first start)
 
 ## 🛠 Development
 
@@ -73,6 +65,7 @@ This project is a minimal, production-ready setup for a Laravel application with
 - **`src/`**: The Laravel application source code.
 
 ### Features & Notes
+- **Single-command bootstrap:** `docker-compose up -d --build` now covers env creation, dependencies, assets, migrations, and first-run seeding within the PHP container.
 - **Automatic Permissions:** The container automatically fixes permissions for `storage` and `bootstrap/cache` on startup to prevent common Windows/Docker permission issues.
 - **Healthchecks:** The application waits for the database to be fully ready before starting to ensure a smooth boot process.
 - **Vite HMR:** Configured to work seamlessly with Docker on port `5173`.

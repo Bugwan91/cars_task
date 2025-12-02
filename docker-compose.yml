@@ -9,7 +9,6 @@ services:
     working_dir: /var/www/html
     volumes:
       - ./src:/var/www/html
-    command: /bin/sh -c "chmod -R 777 storage bootstrap/cache 2>/dev/null; exec php-fpm"
     ports:
       - "5173:5173"
     depends_on:
