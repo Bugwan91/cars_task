@@ -1,3 +1,5 @@
+import { photoUrlOrFallback } from '@/utils/storage';
+
 const priceFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
@@ -7,7 +9,7 @@ const priceFormatter = new Intl.NumberFormat('en-US', {
 
 export const getPrimaryPhotoUrl = (car, fallbackImage) => {
     if (car?.photos?.length) {
-        return `/storage/${car.photos[0].photo_path}`;
+        return photoUrlOrFallback(car.photos[0], fallbackImage);
     }
     return fallbackImage;
 };

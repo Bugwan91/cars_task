@@ -1,6 +1,7 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
 import { DEFAULT_CAR_IMAGE } from '@/constants/media';
+import { ROUTES } from '@/constants/routes';
 import CarCard from '@/Components/cars/CarCard.vue';
 import HomeHeader from '@/Components/Layouts/HomeHeader.vue';
 import useInfiniteCars from '@/composables/useInfiniteCars';
@@ -30,7 +31,13 @@ const {
         <main>
             <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                    <CarCard v-for="car in allCars" :key="car.id" :car="car" :fallback-image="defaultCarImage" />
+                    <CarCard
+                        v-for="car in allCars"
+                        :key="car.id"
+                        :car="car"
+                        :fallback-image="defaultCarImage"
+                        :href="route(ROUTES.cars.show, car.id)"
+                    />
                 </div>
 
                 <!-- Infinite Scroll Trigger -->

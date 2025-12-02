@@ -32,9 +32,17 @@ class CarController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show(Car $car)
     {
-        return Car::with(['photos', 'options'])->findOrFail($id);
+        $car->load(['photos', 'options']);
+
+        if (request()->wantsJson() && !request()->inertia()) {
+            return response()->json($car);
+        }
+
+        return Inertia::render('CarView', [
+            'car' => $car,
+        ]);
     }
 
 

@@ -8,6 +8,7 @@ use Inertia\Inertia;
 
 Route::get('/', [CarController::class, 'home'])->name('home');
 Route::get('/cars/create', [CarController::class, 'create'])->name('cars.create');
+Route::get('/cars/{car}', [CarController::class, 'show'])->name('cars.show');
 Route::post('/cars', [CarController::class, 'store'])->name('cars.store.web');
 
 Route::get('/dashboard', function () {

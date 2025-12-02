@@ -4,6 +4,7 @@ export const ROUTES = {
     cars: {
         create: 'cars.create',
         storeWeb: 'cars.store.web',
+        show: 'cars.show',
     },
     auth: {
         login: 'login',
