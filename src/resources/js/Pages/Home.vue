@@ -111,6 +111,15 @@ onUnmounted(() => {
                             <p class="mt-4 text-sm text-gray-500 dark:text-gray-400 line-clamp-3">
                                 {{ car.description }}
                             </p>
+                            <div v-if="car.options && car.options.length" class="mt-4 flex flex-wrap gap-2">
+                                <span
+                                    v-for="option in car.options"
+                                    :key="`${car.id}-${option.id ?? option.name}`"
+                                    class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-200"
+                                >
+                                    {{ option.name }}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>

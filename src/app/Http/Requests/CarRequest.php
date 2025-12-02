@@ -28,6 +28,8 @@ class CarRequest extends FormRequest
             'year' => 'required|integer|min:1886|max:' . date('Y'),
             'price' => 'nullable|numeric|min:0',
             'description' => 'nullable|string|max:1000',
+            'options' => 'nullable|array',
+            'options.*' => 'string|max:50',
         ];
     }
 }

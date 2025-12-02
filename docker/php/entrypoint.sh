@@ -1,13 +1,10 @@
 #!/bin/sh
 set -e
 
-IS_FIRST_RUN=false
-
 # 1. Setup .env if missing
 if [ ! -f .env ]; then
     echo "📝 .env not found. Creating from .env.example..."
     cp .env.example .env
-    IS_FIRST_RUN=true
 else
     echo "✅ .env exists."
 fi
@@ -45,10 +42,12 @@ else
     echo "⚠️  Skipping migrations (SKIP_MIGRATIONS=1)."
 fi
 
-# Seed database automatically on the first run or when forced
-if [ "$IS_FIRST_RUN" = "true" ] || [ "${FORCE_DB_SEED}" = "1" ]; then
+# Seed database unless explicitly skipped
+if [ "${SKIP_DB_SEED}" != "1" ]; then
     echo "🌱 Seeding database..."
     php artisan db:seed --force
+else
+    echo "⚠️  Skipping database seeding (SKIP_DB_SEED=1)."
 fi
 
 # 5. Fix permissions

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
+
 class Car extends Model
 {
     protected $fillable = [
@@ -18,6 +19,11 @@ class Car extends Model
     public function photos()
     {
         return $this->hasMany(CarPhoto::class);
+    }
+
+    public function options()
+    {
+        return $this->belongsToMany(CarOption::class);
     }
 
     protected static function booted()

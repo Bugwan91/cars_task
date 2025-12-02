@@ -19,7 +19,7 @@ The PHP container's entrypoint handles first-time and subsequent setup automatic
 - copies `.env.example` to `.env` (only once) and generates `APP_KEY` when missing
 - runs `composer install` and `npm install` (only if `node_modules` is absent or you set `FORCE_NPM_INSTALL=1`)
 - builds the production frontend bundle (`npm run build`)
-- runs database migrations every start and seeds once on the very first boot
+- runs database migrations (followed by `php artisan db:seed`) on every start
 - fixes `storage` and `bootstrap/cache` permissions so the app can write logs/uploads
 
 Need to rerun any of those steps? Either restart the `app` service (`docker-compose up -d --build app`) or run the individual commands via `docker-compose exec app ...`.
@@ -37,7 +37,7 @@ You can tweak the bootstrap behavior by setting environment variables on the `ap
 - `FORCE_NPM_INSTALL=1` — reinstall Node dependencies even if `node_modules/` exists
 - `SKIP_NPM_BUILD=1` — skip the production asset build during container startup
 - `SKIP_MIGRATIONS=1` — prevent automatic `php artisan migrate --force`
-- `FORCE_DB_SEED=1` — run `php artisan db:seed --force` on every boot (seeding already runs automatically on the very first start)
+- `SKIP_DB_SEED=1` — skip `php artisan db:seed --force` (by default seeding runs right after migrations)
 
 ## 🛠 Development
 
@@ -65,7 +65,7 @@ You can tweak the bootstrap behavior by setting environment variables on the `ap
 - **`src/`**: The Laravel application source code.
 
 ### Features & Notes
-- **Single-command bootstrap:** `docker-compose up -d --build` now covers env creation, dependencies, assets, migrations, and first-run seeding within the PHP container.
+- **Single-command bootstrap:** `docker-compose up -d --build` now covers env creation, dependencies, assets, migrations, and seeding within the PHP container.
 - **Automatic Permissions:** The container automatically fixes permissions for `storage` and `bootstrap/cache` on startup to prevent common Windows/Docker permission issues.
 - **Healthchecks:** The application waits for the database to be fully ready before starting to ensure a smooth boot process.
 - **Vite HMR:** Configured to work seamlessly with Docker on port `5173`.
