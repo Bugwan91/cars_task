@@ -23,12 +23,14 @@ const activePhotoIndex = ref(null);
 
     <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
         <PageHeader :title="displayTitle">
-            <Link
-                :href="route(ROUTES.home)"
-                class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-            >
-                Back to listings
-            </Link>
+            <div class="flex items-center gap-4">
+                <Link
+                    :href="route(ROUTES.cars.edit, props.car.id)"
+                    class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+                >
+                    Update Car
+                </Link>
+            </div>
         </PageHeader>
 
         <main>

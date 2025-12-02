@@ -55,4 +55,40 @@ class CarCreationTest extends TestCase
 
         Storage::disk('public')->assertExists($car->photos->first()->photo_path);
     }
+
+    /** @test */
+    public function price_is_required_when_creating_a_car(): void
+    {
+        $response = $this->post(route('cars.store.web'), [
+            'brand' => 'NoPrice',
+            'model' => 'Car',
+            'year' => 2024,
+            'description' => 'missing price',
+        ]);
+
+        $response->assertSessionHasErrors(['price']);
+    }
+
+    /** @test */
+    public function it_accepts_avif_photos(): void
+    {
+        Storage::fake('public');
+
+        $response = $this->post(route('cars.store.web'), [
+            'brand' => 'AVIF',
+            'model' => 'Ready',
+            'year' => 2024,
+            'price' => 50000,
+            'photos' => [
+                UploadedFile::fake()->create('primary.avif', 200, 'image/avif'),
+            ],
+        ]);
+
+        $response->assertRedirect(route('home'));
+
+        $car = Car::where('brand', 'AVIF')->first();
+        $this->assertNotNull($car);
+        $this->assertCount(1, $car->photos);
+        Storage::disk('public')->assertExists($car->photos->first()->photo_path);
+    }
 }

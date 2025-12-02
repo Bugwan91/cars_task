@@ -5,6 +5,8 @@ export const ROUTES = {
         create: 'cars.create',
         storeWeb: 'cars.store.web',
         show: 'cars.show',
+        edit: 'cars.edit',
+        updateWeb: 'cars.update.web',
     },
     auth: {
         login: 'login',
