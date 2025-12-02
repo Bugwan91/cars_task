@@ -12,6 +12,10 @@
 
         <!-- Scripts -->
         @routes
+        <script>
+            window.__APP_BASE_CURRENCY__ = @json(config('currency.base', 'USD'));
+            window.__APP_DEFAULT_CURRENCY__ = @json(config('currency.default_display', 'USD'));
+        </script>
         @vite(['resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])
         @inertiaHead
     </head>

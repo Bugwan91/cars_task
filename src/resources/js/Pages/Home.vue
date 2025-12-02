@@ -1,4 +1,5 @@
 <script setup>
+import { watch } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import { DEFAULT_CAR_IMAGE } from '@/constants/media';
 import { ROUTES } from '@/constants/routes';
@@ -11,6 +12,10 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    currency: {
+        type: Object,
+        default: () => ({})
+    }
 });
 
 const defaultCarImage = DEFAULT_CAR_IMAGE;
@@ -19,14 +24,25 @@ const {
     nextPageUrl,
     loading,
     loadMoreTrigger,
+    reset: resetCars,
 } = useInfiniteCars(props.cars.data, props.cars.next_page_url);
+
+watch(
+    () => props.cars,
+    (updated) => {
+        if (!updated) {
+            return;
+        }
+        resetCars(updated.data ?? [], updated.next_page_url ?? null);
+    }
+);
 </script>
 
 <template>
     <Head title="Car Listing" />
 
     <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
-        <HomeHeader :user="$page.props.auth.user" />
+        <HomeHeader :user="$page.props.auth.user" :currency="props.currency" />
 
         <main>
             <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">

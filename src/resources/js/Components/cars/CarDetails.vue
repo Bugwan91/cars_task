@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { BASE_CURRENCY, DEFAULT_DISPLAY_CURRENCY } from '@/constants/currency';
 import { formatCarPrice } from '@/utils/carDisplay';
 
 const props = defineProps({
@@ -17,11 +18,25 @@ const props = defineProps({
     },
 });
 
+const fallbackBaseCurrency = BASE_CURRENCY;
+const displayCurrency = computed(() => props.car.display_currency ?? DEFAULT_DISPLAY_CURRENCY);
+const displayPrice = computed(() => props.car.display_price ?? props.car.price ?? null);
+const originalPrice = computed(() => props.car.original_price ?? null);
+const baseCurrency = computed(() => props.car.base_currency ?? fallbackBaseCurrency);
+
+const formattedPrice = computed(() => formatCarPrice(displayPrice.value, displayCurrency.value));
+const basePriceLabel = computed(() => {
+    if (!originalPrice.value || displayCurrency.value === baseCurrency.value) {
+        return null;
+    }
+    return formatCarPrice(originalPrice.value, baseCurrency.value);
+});
+
 const specs = computed(() => [
     { label: 'Brand', value: props.car.brand ?? '—' },
     { label: 'Model', value: props.car.model ?? '—' },
     { label: 'Year', value: props.car.year ?? '—' },
-    { label: 'Price', value: formatCarPrice(props.car.price) },
+    { label: 'Price', value: formattedPrice.value },
 ]);
 
 const descriptionText = computed(
@@ -43,7 +58,17 @@ const options = computed(() => props.car.options ?? []);
                 class="flex justify-between border-b border-gray-100 pb-3 text-sm dark:border-gray-700"
             >
                 <dt class="text-gray-500 dark:text-gray-400">{{ spec.label }}</dt>
-                <dd class="font-medium text-gray-900 dark:text-gray-200">{{ spec.value }}</dd>
+                <dd class="text-right">
+                    <p class="font-medium text-gray-900 dark:text-gray-200">
+                        {{ spec.value }}
+                    </p>
+                    <span
+                        v-if="spec.label === 'Price' && basePriceLabel"
+                        class="text-xs text-gray-500 dark:text-gray-400"
+                    >
+                        Base ({{ baseCurrency }}): {{ basePriceLabel }}
+                    </span>
+                </dd>
             </div>
         </dl>
 

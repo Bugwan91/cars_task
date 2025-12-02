@@ -6,13 +6,14 @@ use App\Models\Car;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class CarCreationTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function it_creates_a_car_with_basic_data(): void
     {
         $response = $this->post(route('cars.store.web'), [
@@ -28,7 +29,7 @@ class CarCreationTest extends TestCase
         $this->assertDatabaseHas('cars', ['brand' => 'Test', 'model' => 'Model']);
     }
 
-    /** @test */
+    #[Test]
     public function it_creates_car_with_photos_and_sets_primary(): void
     {
         Storage::fake('public');
@@ -56,7 +57,7 @@ class CarCreationTest extends TestCase
         Storage::disk('public')->assertExists($car->photos->first()->photo_path);
     }
 
-    /** @test */
+    #[Test]
     public function price_is_required_when_creating_a_car(): void
     {
         $response = $this->post(route('cars.store.web'), [
@@ -69,7 +70,7 @@ class CarCreationTest extends TestCase
         $response->assertSessionHasErrors(['price']);
     }
 
-    /** @test */
+    #[Test]
     public function it_accepts_avif_photos(): void
     {
         Storage::fake('public');

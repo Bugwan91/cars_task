@@ -5,23 +5,43 @@ namespace App\Http\Controllers;
 use App\Models\Car;
 use App\Models\CarOption;
 use App\Http\Requests\CarRequest;
+use App\Services\ExchangeRateService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class CarController extends Controller
 {
-    public function index()
+    public function __construct(private ExchangeRateService $exchangeRateService)
     {
-        return Car::with(['photos', 'options'])->paginate(9);
     }
 
-    public function home()
+    public function index(Request $request)
     {
+        $currency = $this->determineCurrency($request);
+        $rates = $this->exchangeRateService->getRates();
+
+        $cars = Car::with(['photos', 'options'])->paginate(9);
+        $cars->appends(['currency' => $currency]);
+
+        $cars->getCollection()->transform(fn ($car) => $this->formatCarForResponse($car, $currency, $rates));
+
+        return $cars;
+    }
+
+    public function home(Request $request)
+    {
+        $currency = $this->determineCurrency($request);
+        $rates = $this->exchangeRateService->getRates();
+
         $cars = Car::with(['photos', 'options'])->paginate(9);
         $cars->setPath(route('api.cars.index'));
+        $cars->appends(['currency' => $currency]);
+        $cars->getCollection()->transform(fn ($car) => $this->formatCarForResponse($car, $currency, $rates));
         
         return Inertia::render('Home', [
             'cars' => $cars,
+            'currency' => $this->currencyPayload($currency, $rates),
         ]);
     }
 
@@ -42,16 +62,20 @@ class CarController extends Controller
         ]);
     }
 
-    public function show(Car $car)
+    public function show(Request $request, Car $car)
     {
         $car->load(['photos', 'options']);
+        $currency = $this->determineCurrency($request);
+        $rates = $this->exchangeRateService->getRates();
+        $this->formatCarForResponse($car, $currency, $rates);
 
-        if (request()->wantsJson() && !request()->inertia()) {
+        if ($request->wantsJson() && !$request->inertia()) {
             return response()->json($car);
         }
 
         return Inertia::render('CarView', [
             'car' => $car,
+            'currency' => $this->currencyPayload($currency, $rates),
         ]);
     }
 
@@ -205,5 +229,44 @@ class CarController extends Controller
             $car->photos()->update(['is_primary' => false]);
             $fallback->update(['is_primary' => true]);
         }
+    }
+
+    private function determineCurrency(Request $request): string
+    {
+        $defaultCurrency = config('currency.default_display', 'USD');
+        $currency = strtoupper($request->query(
+            'currency',
+            session('currency', $defaultCurrency)
+        ));
+
+        if (!in_array($currency, ExchangeRateService::SUPPORTED_CURRENCIES, true)) {
+            $currency = $defaultCurrency;
+        }
+
+        session(['currency' => $currency]);
+
+        return $currency;
+    }
+
+    private function formatCarForResponse(Car $car, string $currency, array $rates): Car
+    {
+        $baseCurrency = $this->exchangeRateService->getBaseCurrency();
+
+        $car->setAttribute('display_currency', $currency);
+        $car->setAttribute('original_price', $car->price);
+        $car->setAttribute('base_currency', $baseCurrency);
+        $car->setAttribute('display_price', $this->exchangeRateService->convert($car->price, $currency, $rates));
+
+        return $car;
+    }
+
+    private function currencyPayload(string $currency, array $rates): array
+    {
+        return [
+            'selected' => $currency,
+            'available' => ExchangeRateService::SUPPORTED_CURRENCIES,
+            'base' => $this->exchangeRateService->getBaseCurrency(),
+            'rates' => $this->exchangeRateService->formatRatesForFrontend($rates),
+        ];
     }
 }

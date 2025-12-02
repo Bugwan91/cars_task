@@ -35,6 +35,10 @@ const props = defineProps({
         type: Number,
         default: 4,
     },
+    helper: {
+        type: String,
+        default: '',
+    },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -74,5 +78,9 @@ const updateValue = (eventOrValue) => {
         />
 
         <InputError class="mt-2" :message="props.error" />
+
+        <p v-if="props.helper" class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            {{ props.helper }}
+        </p>
     </div>
 </template>

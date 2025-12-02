@@ -4,6 +4,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import OptionPicker from '@/Components/cars/OptionPicker.vue';
 import PhotoUploader from '@/Components/cars/PhotoUploader.vue';
 import FormField from '@/Components/forms/FormField.vue';
+import { BASE_CURRENCY } from '@/constants/currency';
 
 const props = defineProps({
     form: {
@@ -35,6 +36,7 @@ const props = defineProps({
 const emit = defineEmits(['submit', 'remove-existing', 'set-primary-existing']);
 
 const photoUploaderRef = ref(null);
+const priceHelperText = `Enter the amount in ${BASE_CURRENCY}; prices are stored in ${BASE_CURRENCY}.`;
 
 const handleSubmit = () => emit('submit');
 const handleRemoveExisting = (photoId) => emit('remove-existing', photoId);
@@ -81,6 +83,7 @@ defineExpose({ resetPhotos });
                     step="0.01"
                     v-model="props.form.price"
                     :error="props.form.errors.price"
+                    :helper="priceHelperText"
                     required
                 />
             </div>

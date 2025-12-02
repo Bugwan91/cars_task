@@ -27,6 +27,11 @@ export default function useInfiniteCars(initialCars = [], initialNextPageUrl = n
         }
     };
 
+    const reset = (newCars = [], newNextPageUrl = null) => {
+        cars.value = [...newCars];
+        nextPageUrl.value = newNextPageUrl;
+    };
+
     const observeTarget = () => {
         if (!observer.value || !loadMoreTrigger.value) {
             return;
@@ -69,5 +74,6 @@ export default function useInfiniteCars(initialCars = [], initialNextPageUrl = n
         loading,
         loadMoreCars,
         loadMoreTrigger,
+        reset,
     };
 }
