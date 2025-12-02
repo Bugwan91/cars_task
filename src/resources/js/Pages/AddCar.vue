@@ -1,10 +1,12 @@
 <script setup>
 import { Head, useForm, Link } from '@inertiajs/vue3';
-import { ref, computed, watch, onBeforeUnmount } from 'vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
+import { ref } from 'vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
+import OptionPicker from '@/Components/cars/OptionPicker.vue';
+import PhotoUploader from '@/Components/cars/PhotoUploader.vue';
+import PageHeader from '@/Components/Layouts/PageHeader.vue';
+import FormField from '@/Components/forms/FormField.vue';
+import { ROUTES } from '@/constants/routes';
 
 const props = defineProps({
     availableOptions: {
@@ -24,168 +26,14 @@ const form = useForm({
     primary_photo_index: null,
 });
 
-const optionInput = ref('');
-const selectedOptions = ref([]);
-const photoInput = ref(null);
-const photoPreviews = ref([]);
-const primaryPhotoIndex = ref(null);
-const photoError = computed(() => {
-    if (form.errors.photos) {
-        return form.errors.photos;
-    }
-
-    const specificKey = Object.keys(form.errors).find((key) => key.startsWith('photos.'));
-    return specificKey ? form.errors[specificKey] : '';
-});
-
-const addOption = (value) => {
-    const normalized = value.trim();
-
-    if (!normalized) {
-        optionInput.value = '';
-        return;
-    }
-
-    const exists = selectedOptions.value.some(
-        (option) => option.toLowerCase() === normalized.toLowerCase()
-    );
-
-    if (!exists) {
-        selectedOptions.value.push(normalized);
-    }
-
-    optionInput.value = '';
-};
-
-const removeOption = (value) => {
-    selectedOptions.value = selectedOptions.value.filter((option) => option !== value);
-};
-
-const handleOptionKeydown = (event) => {
-    if (['Enter', 'Tab', ','].includes(event.key)) {
-        event.preventDefault();
-        addOption(optionInput.value);
-    } else if (event.key === 'Backspace' && optionInput.value === '' && selectedOptions.value.length) {
-        selectedOptions.value.pop();
-    }
-};
-
-const suggestedOptions = computed(() => {
-    const search = optionInput.value.trim().toLowerCase();
-
-    return props.availableOptions
-        .filter((option) => {
-            const alreadySelected = selectedOptions.value.some(
-                (selected) => selected.toLowerCase() === option.toLowerCase()
-            );
-
-            if (alreadySelected) {
-                return false;
-            }
-
-            if (!search) {
-                return true;
-            }
-
-            return option.toLowerCase().includes(search);
-        })
-        .slice(0, 8);
-});
-
-watch(
-    selectedOptions,
-    (value) => {
-        form.options = value;
-    },
-    { deep: true }
-);
-
-const resetOptions = () => {
-    selectedOptions.value = [];
-    optionInput.value = '';
-};
-
-const cleanupPhotoPreviews = () => {
-    photoPreviews.value.forEach((preview) => {
-        URL.revokeObjectURL(preview.url);
-    });
-    photoPreviews.value = [];
-};
-
-const setPrimaryPhoto = (index) => {
-    if (!photoPreviews.value.length) {
-        return;
-    }
-    primaryPhotoIndex.value = index;
-};
-
-watch(primaryPhotoIndex, (value) => {
-    form.primary_photo_index = value;
-});
-
-const handlePhotoChange = (event) => {
-    const files = Array.from(event.target.files || []);
-    cleanupPhotoPreviews();
-
-    form.photos = files;
-    photoPreviews.value = files.map((file, index) => ({
-        id: `${file.name}-${file.lastModified}-${index}`,
-        url: URL.createObjectURL(file),
-        name: file.name,
-        size: file.size,
-    }));
-
-    if (files.length) {
-        primaryPhotoIndex.value = 0;
-    } else {
-        primaryPhotoIndex.value = null;
-    }
-
-    if (event.target) {
-        event.target.value = '';
-    }
-};
-
-const removePhoto = (index) => {
-    const updatedFiles = Array.from(form.photos || []);
-    updatedFiles.splice(index, 1);
-    form.photos = updatedFiles;
-
-    const removed = photoPreviews.value.splice(index, 1)[0];
-    if (removed) {
-        URL.revokeObjectURL(removed.url);
-    }
-
-    if (!updatedFiles.length) {
-        primaryPhotoIndex.value = null;
-    } else if (primaryPhotoIndex.value === index) {
-        primaryPhotoIndex.value = 0;
-    } else if ((primaryPhotoIndex.value || 0) > index) {
-        primaryPhotoIndex.value = Math.max((primaryPhotoIndex.value || 0) - 1, 0);
-    }
-};
-
-const resetPhotos = () => {
-    cleanupPhotoPreviews();
-    form.photos = [];
-    primaryPhotoIndex.value = null;
-
-    if (photoInput.value) {
-        photoInput.value.value = '';
-    }
-};
-
-onBeforeUnmount(() => {
-    cleanupPhotoPreviews();
-});
+const photoUploaderRef = ref(null);
 
 const submit = () => {
-    form.post(route('cars.store.web'), {
+    form.post(route(ROUTES.cars.storeWeb), {
         forceFormData: true,
         onSuccess: () => {
             form.reset();
-            resetOptions();
-            resetPhotos();
+            photoUploaderRef.value?.reset();
         },
     });
 };
@@ -195,175 +43,75 @@ const submit = () => {
     <Head title="Add Car" />
 
     <div class="min-h-screen bg-gray-100 dark:bg-gray-900">
-        <header class="bg-white shadow dark:bg-gray-800">
-            <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 flex justify-between items-center">
-                <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-                    Add New Car
-                </h1>
-                <Link :href="route('home')" class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-                    Back to Home
-                </Link>
-            </div>
-        </header>
+        <PageHeader title="Add New Car">
+            <Link
+                :href="route(ROUTES.home)"
+                class="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
+            >
+                Back to Home
+            </Link>
+        </PageHeader>
 
         <main>
             <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
                 <div class="bg-white p-6 shadow sm:rounded-lg dark:bg-gray-800">
                     <form @submit.prevent="submit" class="space-y-6 max-w-xl">
-                        <div>
-                            <InputLabel for="brand" value="Brand" />
-                            <TextInput
-                                id="brand"
-                                type="text"
-                                class="mt-1 block w-full"
-                                v-model="form.brand"
-                                required
-                                autofocus
-                            />
-                            <InputError class="mt-2" :message="form.errors.brand" />
-                        </div>
+                        <FormField
+                            id="brand"
+                            label="Brand"
+                            v-model="form.brand"
+                            :error="form.errors.brand"
+                            required
+                            autofocus
+                        />
 
-                        <div>
-                            <InputLabel for="model" value="Model" />
-                            <TextInput
-                                id="model"
-                                type="text"
-                                class="mt-1 block w-full"
-                                v-model="form.model"
-                                required
-                            />
-                            <InputError class="mt-2" :message="form.errors.model" />
-                        </div>
+                        <FormField
+                            id="model"
+                            label="Model"
+                            v-model="form.model"
+                            :error="form.errors.model"
+                            required
+                        />
 
-                        <div>
-                            <InputLabel for="year" value="Year" />
-                            <TextInput
-                                id="year"
-                                type="number"
-                                class="mt-1 block w-full"
-                                v-model="form.year"
-                                required
-                            />
-                            <InputError class="mt-2" :message="form.errors.year" />
-                        </div>
+                        <FormField
+                            id="year"
+                            label="Year"
+                            type="number"
+                            v-model="form.year"
+                            :error="form.errors.year"
+                            required
+                        />
 
-                        <div>
-                            <InputLabel for="price" value="Price" />
-                            <TextInput
-                                id="price"
-                                type="number"
-                                step="0.01"
-                                class="mt-1 block w-full"
-                                v-model="form.price"
-                            />
-                            <InputError class="mt-2" :message="form.errors.price" />
-                        </div>
+                        <FormField
+                            id="price"
+                            label="Price"
+                            type="number"
+                            step="0.01"
+                            v-model="form.price"
+                            :error="form.errors.price"
+                        />
 
-                        <div>
-                            <InputLabel for="description" value="Description" />
-                            <textarea
-                                id="description"
-                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700"
-                                v-model="form.description"
-                                rows="4"
-                            ></textarea>
-                            <InputError class="mt-2" :message="form.errors.description" />
-                        </div>
+                        <FormField
+                            id="description"
+                            label="Description"
+                            v-model="form.description"
+                            :error="form.errors.description"
+                            textarea
+                            :rows="4"
+                        />
 
-                        <div>
-                            <InputLabel for="options" value="Options" />
-                            <div
-                                class="mt-1 flex flex-wrap items-center gap-2 rounded-md border border-gray-300 bg-white p-2 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900"
-                            >
-                                <span
-                                    v-for="option in selectedOptions"
-                                    :key="option"
-                                    class="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-sm font-medium text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200"
-                                >
-                                    {{ option }}
-                                    <button
-                                        type="button"
-                                        class="text-indigo-500 hover:text-indigo-700 dark:text-indigo-300"
-                                        @click="removeOption(option)"
-                                        aria-label="Remove option"
-                                    >
-                                        ×
-                                    </button>
-                                </span>
+                        <OptionPicker
+                            v-model="form.options"
+                            :suggestions="props.availableOptions"
+                            :error="form.errors.options"
+                        />
 
-                                <input
-                                    id="options"
-                                    v-model="optionInput"
-                                    @keydown="handleOptionKeydown"
-                                    type="text"
-                                    class="flex-1 border-0 bg-transparent p-2 text-sm text-gray-900 placeholder-gray-400 focus:ring-0 dark:text-gray-200 dark:placeholder-gray-500"
-                                    placeholder="Type an option and press Enter"
-                                />
-                            </div>
-                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                Press Enter (or comma) to add. Click a suggested option to reuse an existing one.
-                            </p>
-                            <div v-if="suggestedOptions.length" class="mt-2 flex flex-wrap gap-2">
-                                <button
-                                    v-for="option in suggestedOptions"
-                                    :key="option"
-                                    type="button"
-                                    class="rounded-full border border-gray-200 px-3 py-1 text-xs text-gray-600 hover:border-indigo-300 hover:text-indigo-600 dark:border-gray-700 dark:text-gray-300"
-                                    @click="addOption(option)"
-                                >
-                                    {{ option }}
-                                </button>
-                            </div>
-                            <InputError class="mt-2" :message="form.errors.options" />
-                        </div>
-
-                        <div>
-                            <InputLabel for="photos" value="Photos" />
-                            <input
-                                id="photos"
-                                ref="photoInput"
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                class="mt-1 block w-full text-sm text-gray-900 file:mr-4 file:rounded-md file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 dark:text-gray-200 dark:file:bg-gray-700 dark:file:text-gray-200"
-                                @change="handlePhotoChange"
-                            />
-                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                Upload up to 10 images. Choose one as the main photo for the listing.
-                            </p>
-                            <InputError class="mt-2" :message="photoError" />
-                            <InputError class="mt-1" :message="form.errors.primary_photo_index" />
-
-                            <div v-if="photoPreviews.length" class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
-                                <div
-                                    v-for="(preview, index) in photoPreviews"
-                                    :key="preview.id"
-                                    class="rounded-md border border-gray-200 p-2 dark:border-gray-700"
-                                >
-                                    <img :src="preview.url" :alt="preview.name" class="h-24 w-full rounded object-cover" />
-                                    <p class="mt-2 truncate text-xs text-gray-500 dark:text-gray-400">
-                                        {{ preview.name }}
-                                    </p>
-                                    <div class="mt-2 flex items-center justify-between text-xs">
-                                        <button
-                                            type="button"
-                                            class="rounded-full px-2 py-1"
-                                            :class="primaryPhotoIndex === index ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'"
-                                            @click="setPrimaryPhoto(index)"
-                                        >
-                                            {{ primaryPhotoIndex === index ? 'Main photo' : 'Set as main' }}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            class="text-red-500 hover:text-red-600"
-                                            @click="removePhoto(index)"
-                                        >
-                                            Remove
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <PhotoUploader
+                            ref="photoUploaderRef"
+                            v-model="form.photos"
+                            v-model:primaryIndex="form.primary_photo_index"
+                            :errors="form.errors"
+                        />
 
                         <div class="flex items-center gap-4">
                             <PrimaryButton :disabled="form.processing">
